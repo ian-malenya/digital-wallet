@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>NexWallet – Digital Wallet System</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --bg:      #0a0c10;
+      --surface: #111318;
+      --card:    #161a22;
+      --border:  #1f2533;
+      --accent:  #00e5a0;
+      --accent2: #0066ff;
+      --danger:  #ff4560;
+      --warn:    #ffb800;
+      --text:    #e8edf5;
+      --muted:   #5a6478;
+      --mono:    'DM Mono', monospace;
+      --sans:    'Syne', sans-serif;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text); font-family: var(--sans); min-height: 100vh; overflow-x: hidden; }
+
+    /* ── LOGIN PAGE ── */
+    #login-page {
+      min-height: 100vh; display: flex; align-items: center; justify-content: center;
+      background: var(--bg); position: relative; overflow: hidden;
+    }
+    #login-page::before {
+      content: ''; position: absolute; top: -200px; left: -200px;
+      width: 600px; height: 600px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(0,102,255,.12) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    #login-page::after {
+      content: ''; position: absolute; bottom: -200px; right: -100px;
+      width: 500px; height: 500px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(0,229,160,.08) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .login-box {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 24px; padding: 48px 40px; width: 420px;
+      position: relative; z-index: 1;
+      animation: fadeUp .4s ease;
+    }
+    .login-logo {
+      display: flex; align-items: center; gap: 12px; margin-bottom: 36px;
+    }
+    .login-logo-icon {
+      width: 44px; height: 44px; background: var(--accent);
+      border-radius: 14px; display: grid; place-items: center; font-size: 22px;
+    }
+    .login-logo-text { font-size: 22px; font-weight: 800; letter-spacing: -0.5px; }
+    .login-logo-text span { color: var(--accent); }
+    .login-title { font-size: 26px; font-weight: 800; margin-bottom: 6px; }
+    .login-sub { font-size: 13px; color: var(--muted); font-family: var(--mono); margin-bottom: 32px; }
+    .login-field { margin-bottom: 18px; }
+    .login-field label {
+      display: block; font-size: 11px; font-weight: 600; letter-spacing: 1.5px;
+      text-transform: uppercase; color: var(--muted); margin-bottom: 8px; font-family: var(--mono);
+    }
+    .login-field input {
+      width: 100%; padding: 14px 16px;
+      background: var(--bg); border: 1px solid var(--border);
+      border-radius: 10px; color: var(--text);
+      font-family: var(--mono); font-size: 14px; outline: none;
+      transition: border-color .2s, box-shadow .2s;
+    }
+    .login-field input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(0,229,160,.1);
+    }
+    .login-btn {
+      width: 100%; padding: 15px; margin-top: 8px;
+      background: var(--accent); color: #000;
+      font-family: var(--sans); font-size: 15px; font-weight: 800;
+      border: none; border-radius: 12px; cursor: pointer;
+      transition: all .2s;
+    }
+    .login-btn:hover { background: #00ffb3; transform: translateY(-1px); }
+    .login-error {
+      background: rgba(255,69,96,.1); border: 1px solid rgba(255,69,96,.25);
+      border-radius: 10px; padding: 12px 16px;
+      font-size: 12px; font-family: var(--mono); color: var(--danger);
+      margin-top: 14px; display: none;
+    }
+    .login-hint {
+      margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border);
+      font-size: 11px; font-family: var(--mono); color: var(--muted); line-height: 1.8;
+    }
+    .login-hint strong { color: var(--accent); }
+
+    /* ── APP SHELL ── */
+    #app { display: none; }
+    body.logged-in #login-page { display: none; }
+    body.logged-in #app { display: flex; }
+
+    /* ── SIDEBAR ── */
+    .sidebar {
+      width: 240px; min-height: 100vh;
+      background: var(--surface); border-right: 1px solid var(--border);
+      display: flex; flex-direction: column; padding: 28px 0;
+      position: fixed; top: 0; left: 0; bottom: 0; z-index: 100;
+    }
+    .logo { padding: 0 24px 32px; display: flex; align-items: center; gap: 10px; }
+    .logo-icon { width: 36px; height: 36px; background: var(--accent); border-radius: 10px; display: grid; place-items: center; font-size: 18px; }
+    .logo-text { font-size: 18px; font-weight: 800; letter-spacing: -0.5px; }
+    .logo-text span { color: var(--accent); }
+    .nav-section { padding: 0 12px; margin-bottom: 4px; }
+    .nav-label { font-size: 10px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); padding: 0 12px; margin-bottom: 6px; }
+    .nav-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 12px; border-radius: 8px; cursor: pointer;
+      transition: all .2s; font-size: 14px; font-weight: 600; color: var(--muted);
+      border: none; background: none; width: 100%; text-align: left;
+    }
+    .nav-item:hover { background: var(--card); color: var(--text); }
+    .nav-item.active { background: rgba(0,229,160,.1); color: var(--accent); }
+    .nav-item .icon { font-size: 18px; width: 24px; text-align: center; }
+    .sidebar-footer { margin-top: auto; padding: 16px 24px; border-top: 1px solid var(--border); }
+    .user-pill { display: flex; align-items: center; gap: 10px; }
+    .avatar {
+      width: 34px; height: 34px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent2), var(--accent));
+      display: grid; place-items: center; font-size: 13px; font-weight: 800; flex-shrink: 0;
+    }
+    .user-name { font-size: 13px; font-weight: 600; }
+    .user-role { font-size: 11px; color: var(--muted); font-family: var(--mono); }
+    .logout-btn {
+      margin-top: 12px; width: 100%; padding: 9px;
+      background: none; border: 1px solid var(--border);
+      border-radius: 8px; color: var(--muted);
+      font-family: var(--sans); font-size: 12px; font-weight: 700;
+      cursor: pointer; transition: all .2s; display: flex; align-items: center; justify-content: center; gap: 6px;
+    }
+    .logout-btn:hover { border-color: var(--danger); color: var(--danger); }
+
+    /* ── MAIN ── */
+    .main { margin-left: 240px; flex: 1; padding: 32px 36px; min-height: 100vh; }
+    .topbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 32px; }
+    .page-title { font-size: 26px; font-weight: 800; letter-spacing: -0.5px; }
+    .page-subtitle { font-size: 13px; color: var(--muted); margin-top: 2px; font-family: var(--mono); }
+    .badge { background: rgba(0,229,160,.12); color: var(--accent); font-size: 11px; font-weight: 600; font-family: var(--mono); padding: 4px 10px; border-radius: 20px; border: 1px solid rgba(0,229,160,.25); }
+
+    /* ── SCREENS ── */
+    .screen { display: none; }
+    .screen.active { display: block; animation: fadeUp .35s ease; }
+    @keyframes fadeUp { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:translateY(0); } }
+
+    /* ── GRID ── */
+    .grid-3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; margin-bottom: 24px; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .grid-2-1 { display: grid; grid-template-columns: 1.4fr 1fr; gap: 20px; }
+
+    /* ── CARD ── */
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 22px 24px; }
+    .stat-label { font-size: 11px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; font-family: var(--mono); }
+    .stat-value { font-size: 28px; font-weight: 800; letter-spacing: -1px; line-height: 1; margin-bottom: 6px; }
+    .stat-value.accent { color: var(--accent); }
+    .stat-value.danger { color: var(--danger); }
+    .stat-change { font-size: 11px; font-family: var(--mono); display: flex; align-items: center; gap: 4px; }
+    .stat-change.up { color: var(--accent); }
+    .stat-change.down { color: var(--danger); }
+
+    /* ── WALLET HERO ── */
+    .wallet-hero {
+      background: linear-gradient(135deg, #0d1f3c 0%, #0a0c10 60%);
+      border: 1px solid var(--accent2); border-radius: 18px; padding: 28px;
+      position: relative; overflow: hidden; margin-bottom: 24px;
+    }
+    .wallet-hero::before { content:''; position:absolute; top:-60px; right:-60px; width:240px; height:240px; border-radius:50%; background:radial-gradient(circle,rgba(0,102,255,.18) 0%,transparent 70%); }
+    .wallet-hero::after  { content:''; position:absolute; bottom:-40px; left:40px; width:160px; height:160px; border-radius:50%; background:radial-gradient(circle,rgba(0,229,160,.1) 0%,transparent 70%); }
+    .wallet-chip { font-size:11px; font-weight:600; letter-spacing:2px; text-transform:uppercase; color:var(--accent2); font-family:var(--mono); margin-bottom:20px; display:flex; align-items:center; gap:8px; }
+    .chip-dot { width:6px; height:6px; background:var(--accent2); border-radius:50%; }
+    .wallet-balance-label { font-size:12px; color:var(--muted); margin-bottom:6px; font-family:var(--mono); }
+    .wallet-balance { font-size:42px; font-weight:800; letter-spacing:-2px; margin-bottom:24px; }
+    .wallet-balance span { color:var(--accent); }
+    .wallet-meta { display:flex; gap:32px; }
+    .wallet-meta-item label { font-size:10px; color:var(--muted); font-family:var(--mono); letter-spacing:1px; text-transform:uppercase; }
+    .wallet-meta-item p { font-size:13px; font-weight:600; margin-top:2px; font-family:var(--mono); }
+
+    /* ── ACTION STRIP ── */
+    .action-strip { display:flex; gap:12px; margin-bottom:24px; }
+    .action-btn { flex:1; padding:14px 16px; border-radius:12px; border:1px solid var(--border); background:var(--card); color:var(--text); font-family:var(--sans); font-size:13px; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; transition:all .2s; }
+    .action-btn:hover { border-color:var(--accent); color:var(--accent); transform:translateY(-2px); }
+    .action-btn.primary { background:var(--accent); color:#000; border-color:var(--accent); }
+    .action-btn.primary:hover { background:#00ffb3; }
+
+    /* ── TX LIST ── */
+    .tx-list { display:flex; flex-direction:column; gap:1px; }
+    .tx-item { display:flex; align-items:center; gap:14px; padding:14px 0; border-bottom:1px solid var(--border); }
+    .tx-item:last-child { border-bottom:none; }
+    .tx-icon { width:38px; height:38px; border-radius:10px; display:grid; place-items:center; font-size:17px; flex-shrink:0; }
+    .tx-icon.deposit  { background:rgba(0,229,160,.12); }
+    .tx-icon.withdraw { background:rgba(255,69,96,.12); }
+    .tx-icon.transfer { background:rgba(0,102,255,.12); }
+    .tx-info { flex:1; }
+    .tx-name { font-size:13px; font-weight:700; }
+    .tx-date { font-size:11px; color:var(--muted); font-family:var(--mono); margin-top:2px; }
+    .tx-amount { font-family:var(--mono); font-size:14px; font-weight:500; text-align:right; }
+    .tx-amount.pos { color:var(--accent); }
+    .tx-amount.neg { color:var(--danger); }
+    .tx-status { font-size:10px; font-family:var(--mono); text-align:right; margin-top:2px; color:var(--accent); }
+
+    /* ── FORMS ── */
+    .form-card { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:28px; }
+    .form-title { font-size:18px; font-weight:800; margin-bottom:4px; }
+    .form-desc { font-size:12px; color:var(--muted); font-family:var(--mono); margin-bottom:24px; }
+    .field { margin-bottom:18px; }
+    .field label { display:block; font-size:11px; font-weight:600; letter-spacing:1.5px; text-transform:uppercase; color:var(--muted); margin-bottom:8px; font-family:var(--mono); }
+    .field input, .field select { width:100%; padding:12px 16px; background:var(--bg); border:1px solid var(--border); border-radius:10px; color:var(--text); font-family:var(--mono); font-size:14px; transition:border-color .2s,box-shadow .2s; outline:none; }
+    .field input:focus, .field select:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(0,229,160,.1); }
+    .field select option { background:var(--surface); }
+    .amount-field { position:relative; }
+    .currency-prefix { position:absolute; left:16px; top:50%; transform:translateY(-50%); font-family:var(--mono); color:var(--accent); font-weight:600; }
+    .amount-field input { padding-left:44px; }
+    .submit-btn { width:100%; padding:14px; background:var(--accent); color:#000; font-family:var(--sans); font-size:14px; font-weight:800; border:none; border-radius:10px; cursor:pointer; transition:all .2s; margin-top:8px; }
+    .submit-btn:hover { background:#00ffb3; transform:translateY(-1px); }
+    .submit-btn.danger { background:var(--danger); color:#fff; }
+    .submit-btn.danger:hover { background:#ff6b80; }
+    .submit-btn.blue { background:var(--accent2); color:#fff; }
+    .submit-btn.blue:hover { background:#3385ff; }
+    .info-panel { background:rgba(0,229,160,.06); border:1px solid rgba(0,229,160,.15); border-radius:10px; padding:14px 16px; font-size:12px; font-family:var(--mono); color:var(--accent); margin-bottom:16px; line-height:1.7; }
+
+    /* ── WALLETS PAGE ── */
+    .wallet-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:16px; }
+    .wallet-card { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:20px; cursor:pointer; transition:all .2s; position:relative; overflow:hidden; }
+    .wallet-card::before { content:''; position:absolute; top:0; right:0; width:80px; height:80px; background:radial-gradient(circle,rgba(0,229,160,.08) 0%,transparent 70%); }
+    .wallet-card:hover { border-color:var(--accent); transform:translateY(-3px); }
+    .wallet-card-top { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:16px; }
+    .wallet-type-badge { font-size:10px; font-weight:600; letter-spacing:1.5px; text-transform:uppercase; font-family:var(--mono); padding:4px 10px; border-radius:6px; }
+    .wallet-type-badge.personal { background:rgba(0,102,255,.15); color:var(--accent2); }
+    .wallet-type-badge.business { background:rgba(255,184,0,.15); color:var(--warn); }
+    .wallet-id { font-size:10px; color:var(--muted); font-family:var(--mono); }
+    .wallet-card-name { font-size:15px; font-weight:700; margin-bottom:4px; }
+    .wallet-card-email { font-size:11px; color:var(--muted); font-family:var(--mono); margin-bottom:16px; }
+    .wallet-card-balance-label { font-size:10px; color:var(--muted); font-family:var(--mono); text-transform:uppercase; letter-spacing:1px; }
+    .wallet-card-balance { font-size:24px; font-weight:800; color:var(--accent); letter-spacing:-0.5px; }
+    .create-wallet-btn { display:flex; align-items:center; justify-content:center; gap:8px; padding:14px 22px; background:var(--accent); color:#000; font-family:var(--sans); font-weight:800; font-size:13px; border:none; border-radius:10px; cursor:pointer; transition:all .2s; }
+    .create-wallet-btn:hover { background:#00ffb3; transform:translateY(-1px); }
+
+    /* ── SECTION HEADER ── */
+    .section-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; }
+    .section-title { font-size:15px; font-weight:800; }
+    .section-link { font-size:12px; color:var(--accent); font-family:var(--mono); cursor:pointer; }
+
+    /* ── MODAL ── */
+    .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,.7); display:none; place-items:center; z-index:500; backdrop-filter:blur(4px); }
+    .modal-overlay.show { display:grid; }
+    .modal { background:var(--card); border:1px solid var(--border); border-radius:18px; padding:32px; width:420px; animation:fadeUp .3s ease; }
+    .modal-title { font-size:18px; font-weight:800; margin-bottom:6px; }
+    .modal-sub { font-size:12px; color:var(--muted); font-family:var(--mono); margin-bottom:24px; }
+    .modal-footer { display:flex; gap:10px; margin-top:20px; }
+    .modal-cancel { flex:1; padding:12px; border-radius:10px; border:1px solid var(--border); background:none; color:var(--text); font-family:var(--sans); font-weight:700; cursor:pointer; transition:all .2s; }
+    .modal-cancel:hover { border-color:var(--muted); }
+
+    /* ── TOAST ── */
+    .toast { position:fixed; bottom:28px; right:28px; padding:14px 20px; border-radius:12px; font-family:var(--mono); font-size:13px; font-weight:500; display:flex; align-items:center; gap:10px; box-shadow:0 8px 32px rgba(0,0,0,.4); z-index:999; transform:translateY(80px); opacity:0; transition:all .3s cubic-bezier(.34,1.56,.64,1); }
+    .toast.show { transform:translateY(0); opacity:1; }
+    .toast.success { background:rgba(0,229,160,.15); border:1px solid rgba(0,229,160,.3); color:var(--accent); }
+    .toast.error   { background:rgba(255,69,96,.15); border:1px solid rgba(255,69,96,.3); color:var(--danger); }
+
+    @media(max-width:900px){
+      .sidebar{width:60px;}
+      .logo-text,.nav-item span:not(.icon),.user-name,.user-role,.logout-btn span{display:none;}
+      .main{margin-left:60px;padding:20px;}
+      .grid-3{grid-template-columns:1fr;}
+      .grid-2,.grid-2-1{grid-template-columns:1fr;}
+    }
+  </style>
+</head>
+<body>
+
+<!-- ══════════════ LOGIN PAGE ══════════════ -->
+<div id="login-page">
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="login-logo-icon">💎</div>
+      <div class="login-logo-text">Nex<span>Wallet</span></div>
+    </div>
+    <div class="login-title">Welcome back</div>
+    <div class="login-sub">Enter your wallet email to sign in</div>
+
+    <div class="login-field">
+      <label>Email Address</label>
+      <input type="email" id="login-email" placeholder="e.g. john@example.com" onkeydown="if(event.key==='Enter') handleLogin()"/>
+    </div>
+    <button class="login-btn" onclick="handleLogin()">→ Access Wallet</button>
+    <div class="login-error" id="login-error">No wallet found for that email. Please check and try again.</div>
+
+    <div class="login-hint">
+      <strong>Test accounts:</strong><br>
+      john@example.com — John Doe<br>
+      jane@example.com — Jane Smith
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ APP SHELL ══════════════ -->
+<div id="app">
+
+  <!-- SIDEBAR -->
+  <nav class="sidebar">
+    <div class="logo">
+      <div class="logo-icon">💎</div>
+      <div class="logo-text">Nex<span>Wallet</span></div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-label">Main</div>
+      <button class="nav-item active" onclick="navigate('dashboard')"><span class="icon">⬡</span><span>Dashboard</span></button>
+      <button class="nav-item" onclick="navigate('wallets')"><span class="icon">◈</span><span>Wallets</span></button>
+      <button class="nav-item" onclick="navigate('transactions')"><span class="icon">↕</span><span>Transactions</span></button>
+    </div>
+    <div class="nav-section" style="margin-top:16px">
+      <div class="nav-label">Actions</div>
+      <button class="nav-item" onclick="navigate('deposit')"><span class="icon">↓</span><span>Deposit</span></button>
+      <button class="nav-item" onclick="navigate('withdraw')"><span class="icon">↑</span><span>Withdraw</span></button>
+      <button class="nav-item" onclick="navigate('transfer')"><span class="icon">⇄</span><span>Transfer</span></button>
+    </div>
+    <div class="sidebar-footer">
+      <div class="user-pill">
+        <div class="avatar" id="sidebar-avatar">?</div>
+        <div>
+          <div class="user-name" id="sidebar-name">—</div>
+          <div class="user-role" id="sidebar-email">—</div>
+        </div>
+      </div>
+      <button class="logout-btn" onclick="handleLogout()">⏻ <span>Sign Out</span></button>
+    </div>
+  </nav>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <!-- DASHBOARD -->
+    <div id="screen-dashboard" class="screen active">
+      <div class="topbar">
+        <div>
+          <div class="page-title">Dashboard</div>
+          <div class="page-subtitle" id="dash-subtitle">wallet_overview</div>
+        </div>
+        <span class="badge">● LIVE</span>
+      </div>
+      <div class="wallet-hero">
+        <div class="wallet-chip"><span class="chip-dot"></span> MY WALLET</div>
+        <div class="wallet-balance-label">TOTAL BALANCE</div>
+        <div class="wallet-balance">KES <span id="hero-balance">0.00</span></div>
+        <div class="wallet-meta">
+          <div class="wallet-meta-item"><label>Wallet ID</label><p id="hero-wallet-id">—</p></div>
+          <div class="wallet-meta-item"><label>Owner</label><p id="hero-owner">—</p></div>
+          <div class="wallet-meta-item"><label>Status</label><p style="color:var(--accent)">● ACTIVE</p></div>
+        </div>
+      </div>
+      <div class="action-strip">
+        <button class="action-btn primary" onclick="navigate('deposit')">↓ Deposit</button>
+        <button class="action-btn" onclick="navigate('withdraw')">↑ Withdraw</button>
+        <button class="action-btn" onclick="navigate('transfer')">⇄ Transfer</button>
+        <button class="action-btn" onclick="navigate('wallets')">◈ Wallets</button>
+      </div>
+      <div class="grid-3">
+        <div class="card">
+          <div class="stat-label">Total Deposited</div>
+          <div class="stat-value accent" id="stat-deposited">KES 0.00</div>
+          <div class="stat-change up">↑ all time</div>
+        </div>
+        <div class="card">
+          <div class="stat-label">Total Withdrawn</div>
+          <div class="stat-value danger" id="stat-withdrawn">KES 0.00</div>
+          <div class="stat-change down">↓ all time</div>
+        </div>
+        <div class="card">
+          <div class="stat-label">Transfers Made</div>
+          <div class="stat-value" style="color:var(--accent2)" id="stat-transfers">0</div>
+          <div class="stat-change up" style="color:var(--accent2)">⇄ all time</div>
+        </div>
+      </div>
+      <div class="grid-2-1">
+        <div class="card">
+          <div class="section-header">
+            <div class="section-title">Recent Transactions</div>
+            <div class="section-link" onclick="navigate('transactions')">View all →</div>
+          </div>
+          <div class="tx-list" id="tx-list-dashboard"></div>
+        </div>
+        <div class="card">
+          <div class="section-title" style="margin-bottom:14px">Quick Stats</div>
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <div style="display:flex;justify-content:space-between">
+              <span style="font-size:12px;color:var(--muted);font-family:var(--mono)">Wallet ID</span>
+              <span style="font-size:13px;font-weight:700;font-family:var(--mono)" id="qs-wallet-id">—</span>
+            </div>
+            <div style="display:flex;justify-content:space-between">
+              <span style="font-size:12px;color:var(--muted);font-family:var(--mono)">Currency</span>
+              <span style="font-size:13px;font-weight:700;font-family:var(--mono)" id="qs-currency">KES</span>
+            </div>
+            <div style="display:flex;justify-content:space-between">
+              <span style="font-size:12px;color:var(--muted);font-family:var(--mono)">Total Tx</span>
+              <span style="font-size:13px;font-weight:700" id="qs-tx-count">0</span>
+            </div>
+            <div style="display:flex;justify-content:space-between">
+              <span style="font-size:12px;color:var(--muted);font-family:var(--mono)">Status</span>
+              <span style="font-size:12px;font-family:var(--mono);color:var(--accent)">● Active</span>
+            </div>
+            <div style="display:flex;justify-content:space-between">
+              <span style="font-size:12px;color:var(--muted);font-family:var(--mono)">API</span>
+              <span style="font-size:12px;font-family:var(--mono);color:var(--accent)">● Healthy</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- WALLETS -->
+    <div id="screen-wallets" class="screen">
+      <div class="topbar">
+        <div><div class="page-title">All Wallets</div><div class="page-subtitle">manage_wallets · all accounts</div></div>
+        <button class="create-wallet-btn" onclick="document.getElementById('create-wallet-modal').classList.add('show')">+ New Wallet</button>
+      </div>
+      <div class="wallet-grid" id="wallet-grid"></div>
+    </div>
+
+    <!-- TRANSACTIONS -->
+    <div id="screen-transactions" class="screen">
+      <div class="topbar">
+        <div><div class="page-title">My Transactions</div><div class="page-subtitle">transaction_history · my wallet</div></div>
+      </div>
+      <div class="card"><div class="tx-list" id="tx-list-full"></div></div>
+    </div>
+
+    <!-- DEPOSIT -->
+    <div id="screen-deposit" class="screen">
+      <div class="topbar"><div><div class="page-title">Deposit Funds</div><div class="page-subtitle">add_funds · instant credit</div></div></div>
+      <div class="grid-2">
+        <div class="form-card">
+          <div class="form-title">Make a Deposit</div>
+          <div class="form-desc">Funds will be credited instantly to the selected wallet.</div>
+          <div class="info-panel">✦ Endpoint: POST /api/wallets/{id}/deposit<br>✦ Min deposit: KES 1.00</div>
+          <div class="field"><label>Select Wallet</label><select id="deposit-wallet"></select></div>
+          <div class="field"><label>Amount (KES)</label><div class="amount-field"><span class="currency-prefix">KES</span><input type="number" id="deposit-amount" placeholder="0.00" min="1" step="0.01"/></div></div>
+          <div class="field"><label>Reference / Note</label><input type="text" id="deposit-ref" placeholder="e.g. Salary, Client payment…"/></div>
+          <button class="submit-btn" onclick="handleDeposit()">↓ Deposit Funds</button>
+        </div>
+        <div class="card"><div class="section-title" style="margin-bottom:16px">Recent Deposits</div><div class="tx-list" id="deposit-history"></div></div>
+      </div>
+    </div>
+
+    <!-- WITHDRAW -->
+    <div id="screen-withdraw" class="screen">
+      <div class="topbar"><div><div class="page-title">Withdraw Funds</div><div class="page-subtitle">debit_wallet · instant debit</div></div></div>
+      <div class="grid-2">
+        <div class="form-card">
+          <div class="form-title">Withdraw Funds</div>
+          <div class="form-desc">Debit funds from your wallet. Ensure sufficient balance.</div>
+          <div class="info-panel" style="background:rgba(255,69,96,.06);border-color:rgba(255,69,96,.2);color:var(--danger)">✦ Endpoint: POST /api/wallets/{id}/withdraw<br>✦ Balance must be sufficient</div>
+          <div class="field"><label>Select Wallet</label><select id="withdraw-wallet"></select></div>
+          <div class="field"><label>Amount (KES)</label><div class="amount-field"><span class="currency-prefix">KES</span><input type="number" id="withdraw-amount" placeholder="0.00" min="1" step="0.01"/></div></div>
+          <div class="field"><label>Reference / Note</label><input type="text" id="withdraw-ref" placeholder="e.g. Rent, Utilities…"/></div>
+          <button class="submit-btn danger" onclick="handleWithdraw()">↑ Withdraw Funds</button>
+        </div>
+        <div class="card"><div class="section-title" style="margin-bottom:16px">Recent Withdrawals</div><div class="tx-list" id="withdraw-history"></div></div>
+      </div>
+    </div>
+
+    <!-- TRANSFER -->
+    <div id="screen-transfer" class="screen">
+      <div class="topbar"><div><div class="page-title">Transfer Funds</div><div class="page-subtitle">wallet_to_wallet · instant</div></div></div>
+      <div class="grid-2">
+        <div class="form-card">
+          <div class="form-title">Transfer Between Wallets</div>
+          <div class="form-desc">Move funds from one wallet to another instantly.</div>
+          <div class="info-panel" style="background:rgba(0,102,255,.06);border-color:rgba(0,102,255,.2);color:var(--accent2)">✦ Endpoint: POST /api/wallets/transfer<br>✦ Atomic operation · Both wallets must be active</div>
+          <div class="field"><label>From Wallet</label><select id="transfer-from"></select></div>
+          <div class="field"><label>To Wallet</label><select id="transfer-to"></select></div>
+          <div class="field"><label>Amount (KES)</label><div class="amount-field"><span class="currency-prefix">KES</span><input type="number" id="transfer-amount" placeholder="0.00" min="1" step="0.01"/></div></div>
+          <div class="field"><label>Reference / Note</label><input type="text" id="transfer-ref" placeholder="e.g. Invoice #42…"/></div>
+          <button class="submit-btn blue" onclick="handleTransfer()">⇄ Transfer Funds</button>
+        </div>
+        <div class="card"><div class="section-title" style="margin-bottom:16px">Recent Transfers</div><div class="tx-list" id="transfer-history"></div></div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- CREATE WALLET MODAL -->
+<div class="modal-overlay" id="create-wallet-modal">
+  <div class="modal">
+    <div class="modal-title">Create New Wallet</div>
+    <div class="modal-sub">POST /api/wallets · new wallet account</div>
+    <div class="field"><label>Full Name</label><input type="text" id="new-wallet-name" placeholder="e.g. Jane Doe"/></div>
+    <div class="field"><label>Email Address</label><input type="email" id="new-wallet-email" placeholder="jane@example.com"/></div>
+    <div class="field"><label>Currency</label><select id="new-wallet-currency"><option value="KES">KES — Kenyan Shilling</option><option value="USD">USD — US Dollar</option></select></div>
+    <div class="modal-footer">
+      <button class="modal-cancel" onclick="document.getElementById('create-wallet-modal').classList.remove('show')">Cancel</button>
+      <button class="submit-btn" style="margin:0;flex:1.5" onclick="handleCreateWallet()">Create Wallet</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+  const API = 'http://localhost:8080/api/wallets';
+  let currentWallet = null; // logged-in wallet object
+
+  /* ── HELPERS ── */
+  function fmt(n) {
+    return 'KES ' + Math.abs(n).toLocaleString('en-KE', {minimumFractionDigits:2, maximumFractionDigits:2});
+  }
+
+  function showToast(msg, type='success') {
+    const t = document.getElementById('toast');
+    t.className = 'toast ' + type;
+    t.innerHTML = (type==='success' ? '✓ ' : '✕ ') + msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3500);
+  }
+
+  function txTypeClass(type) {
+    if (type==='DEPOSIT'||type==='TRANSFER_IN') return 'deposit';
+    if (type==='WITHDRAWAL') return 'withdraw';
+    return 'transfer';
+  }
+  function txIcon(type) {
+    if (type==='DEPOSIT'||type==='TRANSFER_IN') return '↓';
+    if (type==='WITHDRAWAL') return '↑';
+    return '⇄';
+  }
+  function txHTML(tx) {
+    const isPos = tx.type==='DEPOSIT'||tx.type==='TRANSFER_IN';
+    const cls   = txTypeClass(tx.type);
+    const date  = new Date(tx.createdAt).toLocaleString('en-KE',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+    return `<div class="tx-item">
+      <div class="tx-icon ${cls}">${txIcon(tx.type)}</div>
+      <div class="tx-info">
+        <div class="tx-name">${tx.reference||tx.type}</div>
+        <div class="tx-date">${date}</div>
+      </div>
+      <div>
+        <div class="tx-amount ${isPos?'pos':'neg'}">${isPos?'+':'-'}${fmt(tx.amount)}</div>
+        <div class="tx-status">● ${tx.status}</div>
+      </div>
+    </div>`;
+  }
+  function emptyMsg(msg) {
+    return `<div style="color:var(--muted);font-family:var(--mono);font-size:12px;padding:16px 0">${msg}</div>`;
+  }
+
+  /* ══════════════ LOGIN ══════════════ */
+  async function handleLogin() {
+    const email = document.getElementById('login-email').value.trim().toLowerCase();
+    const errEl = document.getElementById('login-error');
+    errEl.style.display = 'none';
+    if (!email) { errEl.style.display='block'; errEl.textContent='Please enter your email.'; return; }
+
+    try {
+      const wallets = await fetch(API).then(r => r.json());
+      const found   = wallets.find(w => w.email.toLowerCase() === email);
+      if (!found) {
+        errEl.style.display = 'block';
+        errEl.textContent   = 'No wallet found for that email. Please check and try again.';
+        return;
+      }
+      currentWallet = found;
+      bootApp();
+    } catch(e) {
+      errEl.style.display  = 'block';
+      errEl.textContent    = 'Cannot connect to backend. Make sure Spring Boot is running on port 8080.';
+    }
+  }
+
+  function bootApp() {
+    // Update sidebar
+    const initials = currentWallet.ownerName.split(' ').map(n=>n[0]).join('').toUpperCase();
+    document.getElementById('sidebar-avatar').textContent = initials;
+    document.getElementById('sidebar-name').textContent   = currentWallet.ownerName;
+    document.getElementById('sidebar-email').textContent  = currentWallet.email;
+    // Show app
+    document.body.classList.add('logged-in');
+    navigate('dashboard');
+  }
+
+  function handleLogout() {
+    currentWallet = null;
+    document.body.classList.remove('logged-in');
+    document.getElementById('login-email').value = '';
+    document.getElementById('login-error').style.display = 'none';
+    showToast('Signed out successfully', 'success');
+  }
+
+  /* ══════════════ NAVIGATION ══════════════ */
+  function navigate(screen) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById('screen-'+screen).classList.add('active');
+    document.querySelectorAll('.nav-item').forEach(btn => {
+      btn.classList.toggle('active', btn.getAttribute('onclick')?.includes("'"+screen+"'"));
+    });
+    if (screen==='dashboard')    loadDashboard();
+    if (screen==='wallets')      loadWallets();
+    if (screen==='transactions') loadMyTransactions();
+    if (screen==='deposit'||screen==='withdraw'||screen==='transfer') loadWalletSelects(screen);
+  }
+
+  /* ══════════════ DASHBOARD ══════════════ */
+  async function loadDashboard() {
+    if (!currentWallet) return;
+    try {
+      // Refresh wallet balance
+      const w = await fetch(`${API}/${currentWallet.id}`).then(r => r.json());
+      currentWallet = w;
+
+      document.getElementById('hero-balance').textContent  = w.balance.toLocaleString('en-KE',{minimumFractionDigits:2});
+      document.getElementById('hero-wallet-id').textContent = '#' + w.id;
+      document.getElementById('hero-owner').textContent    = w.ownerName;
+      document.getElementById('qs-wallet-id').textContent  = '#' + w.id;
+      document.getElementById('qs-currency').textContent   = w.currency;
+      document.getElementById('dash-subtitle').textContent = `wallet_overview · ${w.ownerName}`;
+
+      // Load MY transactions
+      const txs = await fetch(`${API}/${w.id}/transactions`).then(r => r.json());
+      document.getElementById('qs-tx-count').textContent = txs.length;
+
+      // Stats
+      const deposited  = txs.filter(t=>t.type==='DEPOSIT').reduce((s,t)=>s+t.amount,0);
+      const withdrawn  = txs.filter(t=>t.type==='WITHDRAWAL').reduce((s,t)=>s+t.amount,0);
+      const transfers  = txs.filter(t=>t.type==='TRANSFER_OUT').length;
+      document.getElementById('stat-deposited').textContent = fmt(deposited);
+      document.getElementById('stat-withdrawn').textContent = fmt(withdrawn);
+      document.getElementById('stat-transfers').textContent = transfers;
+
+      // Recent tx list
+      const list = document.getElementById('tx-list-dashboard');
+      list.innerHTML = txs.length===0 ? emptyMsg('No transactions yet') : txs.slice(0,5).map(txHTML).join('');
+
+    } catch(e) { showToast('Could not load dashboard', 'error'); }
+  }
+
+  /* ══════════════ MY TRANSACTIONS ══════════════ */
+  async function loadMyTransactions() {
+    if (!currentWallet) return;
+    try {
+      const txs  = await fetch(`${API}/${currentWallet.id}/transactions`).then(r => r.json());
+      const list = document.getElementById('tx-list-full');
+      list.innerHTML = txs.length===0 ? emptyMsg('No transactions yet') : txs.map(txHTML).join('');
+    } catch(e) { showToast('Could not load transactions', 'error'); }
+  }
+
+  /* ══════════════ ALL WALLETS ══════════════ */
+  async function loadWallets() {
+    try {
+      const wallets = await fetch(API).then(r => r.json());
+      const grid    = document.getElementById('wallet-grid');
+      if (wallets.length===0) { grid.innerHTML = emptyMsg('No wallets yet.'); return; }
+      grid.innerHTML = wallets.map(w => {
+        const isMe = w.id === currentWallet?.id;
+        return `<div class="wallet-card" style="${isMe?'border-color:var(--accent)':''}">
+          <div class="wallet-card-top">
+            <div class="wallet-type-badge personal">${isMe?'● my wallet':'personal'}</div>
+            <div class="wallet-id">#${w.id}</div>
+          </div>
+          <div class="wallet-card-name">${w.ownerName}</div>
+          <div class="wallet-card-email">${w.email}</div>
+          <div class="wallet-card-balance-label">Balance</div>
+          <div class="wallet-card-balance">${fmt(w.balance)}</div>
+        </div>`;
+      }).join('');
+    } catch(e) { showToast('Could not load wallets', 'error'); }
+  }
+
+  /* ══════════════ WALLET SELECTS ══════════════ */
+  async function loadWalletSelects(screen) {
+    try {
+      const wallets = await fetch(API).then(r => r.json());
+      const options = wallets.map(w =>
+        `<option value="${w.id}" ${w.id===currentWallet?.id?'selected':''}>#${w.id} — ${w.ownerName} (${fmt(w.balance)})</option>`
+      ).join('');
+
+      if (screen==='deposit')  { document.getElementById('deposit-wallet').innerHTML  = options; loadActionHistory('deposit'); }
+      if (screen==='withdraw') { document.getElementById('withdraw-wallet').innerHTML = options; loadActionHistory('withdraw'); }
+      if (screen==='transfer') {
+        document.getElementById('transfer-from').innerHTML = options;
+        document.getElementById('transfer-to').innerHTML   = options;
+        // auto-select a different wallet for "to"
+        const others = wallets.filter(w => w.id !== currentWallet?.id);
+        if (others.length > 0) document.getElementById('transfer-to').value = others[0].id;
+        loadActionHistory('transfer');
+      }
+    } catch(e) { console.error('Could not load wallet selects'); }
+  }
+
+  async function loadActionHistory(type) {
+    if (!currentWallet) return;
+    try {
+      const txs     = await fetch(`${API}/${currentWallet.id}/transactions`).then(r => r.json());
+      const typeMap = { deposit:'DEPOSIT', withdraw:'WITHDRAWAL', transfer:'TRANSFER_OUT' };
+      const filtered = txs.filter(t => t.type === typeMap[type]);
+      const el = document.getElementById(type+'-history');
+      if (el) el.innerHTML = filtered.length===0 ? emptyMsg('No '+type+'s yet') : filtered.slice(0,5).map(txHTML).join('');
+    } catch(e) {}
+  }
+
+  /* ══════════════ DEPOSIT ══════════════ */
+  async function handleDeposit() {
+    const walletId = document.getElementById('deposit-wallet').value;
+    const amt      = parseFloat(document.getElementById('deposit-amount').value);
+    if (!amt||amt<=0) return showToast('Enter a valid amount','error');
+    try {
+      const res = await fetch(`${API}/${walletId}/deposit`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({amount:amt})});
+      if (!res.ok) { const e=await res.json(); return showToast(e.error||'Deposit failed','error'); }
+      document.getElementById('deposit-amount').value='';
+      document.getElementById('deposit-ref').value='';
+      showToast(`${fmt(amt)} deposited!`,'success');
+      await loadWalletSelects('deposit');
+      loadDashboard();
+    } catch(e) { showToast('Backend unreachable','error'); }
+  }
+
+  /* ══════════════ WITHDRAW ══════════════ */
+  async function handleWithdraw() {
+    const walletId = document.getElementById('withdraw-wallet').value;
+    const amt      = parseFloat(document.getElementById('withdraw-amount').value);
+    if (!amt||amt<=0) return showToast('Enter a valid amount','error');
+    try {
+      const res = await fetch(`${API}/${walletId}/withdraw`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({amount:amt})});
+      if (!res.ok) { const e=await res.json(); return showToast(e.error||'Withdrawal failed','error'); }
+      document.getElementById('withdraw-amount').value='';
+      document.getElementById('withdraw-ref').value='';
+      showToast(`${fmt(amt)} withdrawn!`,'success');
+      await loadWalletSelects('withdraw');
+      loadDashboard();
+    } catch(e) { showToast('Backend unreachable','error'); }
+  }
+
+  /* ══════════════ TRANSFER ══════════════ */
+  async function handleTransfer() {
+    const fromId = document.getElementById('transfer-from').value;
+    const toId   = document.getElementById('transfer-to').value;
+    const amt    = parseFloat(document.getElementById('transfer-amount').value);
+    if (!amt||amt<=0) return showToast('Enter a valid amount','error');
+    if (fromId===toId) return showToast('Cannot transfer to the same wallet','error');
+    try {
+      const res = await fetch(`${API}/transfer`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({fromWalletId:parseInt(fromId),toWalletId:parseInt(toId),amount:amt})});
+      if (!res.ok) { const e=await res.json(); return showToast(e.error||'Transfer failed','error'); }
+      document.getElementById('transfer-amount').value='';
+      document.getElementById('transfer-ref').value='';
+      showToast(`${fmt(amt)} transferred!`,'success');
+      await loadWalletSelects('transfer');
+      loadDashboard();
+    } catch(e) { showToast('Backend unreachable','error'); }
+  }
+
+  /* ══════════════ CREATE WALLET ══════════════ */
+  async function handleCreateWallet() {
+    const name     = document.getElementById('new-wallet-name').value.trim();
+    const email    = document.getElementById('new-wallet-email').value.trim();
+    const currency = document.getElementById('new-wallet-currency').value;
+    if (!name||!email) return showToast('Please fill all fields','error');
+    try {
+      const res = await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ownerName:name,email,currency})});
+      if (!res.ok) { const e=await res.json(); return showToast(e.error||'Could not create wallet','error'); }
+      document.getElementById('create-wallet-modal').classList.remove('show');
+      document.getElementById('new-wallet-name').value='';
+      document.getElementById('new-wallet-email').value='';
+      showToast(`Wallet created for ${name}!`,'success');
+      loadWallets();
+    } catch(e) { showToast('Backend unreachable','error'); }
+  }
+</script>
+</body>
+</html>
