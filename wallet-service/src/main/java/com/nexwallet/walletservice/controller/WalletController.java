@@ -15,7 +15,13 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/wallets")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
+@CrossOrigin(origins = "*", allowedHeaders = "*", methods = {
+    org.springframework.web.bind.annotation.RequestMethod.GET,
+    org.springframework.web.bind.annotation.RequestMethod.POST,
+    org.springframework.web.bind.annotation.RequestMethod.PUT,
+    org.springframework.web.bind.annotation.RequestMethod.DELETE,
+    org.springframework.web.bind.annotation.RequestMethod.OPTIONS
+})
 public class WalletController {
 
     private final WalletService walletService;
